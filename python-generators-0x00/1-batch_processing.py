@@ -1,4 +1,3 @@
-from itertools import islice
 import seed
 
 def stream_users_in_batches(batch_size):
@@ -19,6 +18,7 @@ def stream_users_in_batches(batch_size):
     finally:
         cursor.close()
         connection.close()
+    return
 
 def batch_processing(batch_size):
     """Process user data in batches."""
@@ -27,3 +27,5 @@ def batch_processing(batch_size):
         for user in batch:
           if int(user['age']) > 25:
             print(user)
+        print("Batch processed successfully.")
+    return
