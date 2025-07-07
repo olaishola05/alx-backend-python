@@ -1,6 +1,6 @@
 import sqlite3
 import functools
-
+from datetime import datetime
 
 def log_queries(func):
   @functools.wraps(func)
@@ -8,7 +8,7 @@ def log_queries(func):
     query = kwargs.get('query')
     if query is None and args:
       query = args[0]
-    print(f"Query passed: {query}")
+    print(f"Query passed: {query}, at {datetime.now()}")
     try:
       return func(*args, **kwargs)
     except Exception as e:
