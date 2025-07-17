@@ -20,8 +20,6 @@ class TestGithubOrgClient(unittest.TestCase):
         # expected_payload = {"repos_url": url}
         expected_payload = {
             "login": org_name,
-            "id": 123,
-            "url": f"https://api.github.com/orgs/{org_name}",
             "repos_url": f"https://api.github.com/orgs/{org_name}/repos",
         }
         mock_get_json.return_value = expected_payload
@@ -29,9 +27,10 @@ class TestGithubOrgClient(unittest.TestCase):
         client = GithubOrgClient(org_name)
         result = client.org
 
-        expected_url = GithubOrgClient.ORG_URL.format(org=org_name)
+        # expected_url = GithubOrgClient.ORG_URL.format(org=org_name)
         self.assertEqual(result, expected_payload)
-        mock_get_json.assert_called_once_with(expected_url)
+        mock_get_json.assert_called_once_with(f"https://api.github.com/orgs/{org_name}")
+        # print("Called with:", mock_get_json.call_args)
 
 
 if __name__ == '__main__':
