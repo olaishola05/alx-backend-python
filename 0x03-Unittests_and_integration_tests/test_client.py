@@ -22,9 +22,10 @@ class TestGithubOrgClient(unittest.TestCase):
         """Testing that GithubOrgClient.org returns
         the correct value and get_json is called once with expected arg
         """
-        expected_data = {"repos_url": f"https://api.github.com/orgs/{company_name}/repos"}
-        mock_get_json.return_value = expected_data
+
         client = GithubOrgClient(company_name)
+        expected_data = {"repos_url": client.ORG_URL.format(org=company_name)}
+        mock_get_json.return_value = expected_data
         actual_org_data = client.org
 
         self.assertEqual(actual_org_data, expected_data)
