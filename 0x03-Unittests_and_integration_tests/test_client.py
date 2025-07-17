@@ -14,13 +14,11 @@ class TestGithubOrgClient(unittest.TestCase):
     A test class to test the public_repo_url function
     """
     @parameterized.expand([
-        ("google", "https://api.github.com/orgs/google/repos",
-         {"repos_url": "https://api.github.com/orgs/google/repos"}),
-        ("abc", "https://api.github.com/orgs/abc/repos",
-         {"repos_url": "https://api.github.com/orgs/abc/repos"}),
+        ("google", {"repos_url": "https://api.github.com/orgs/google/repos"}),
+        ("abc", {"repos_url": "https://api.github.com/orgs/abc/repos"}),
     ])
     @patch('client.get_json', autospec=True)
-    def test_org(self, company_name, repo_url, expected_data, mock_get_json):
+    def test_org(self, company_name, expected_data, mock_get_json):
         """Testing that GithubOrgClient.org returns
         the correct value and get_json is called once with expected arg
         """
