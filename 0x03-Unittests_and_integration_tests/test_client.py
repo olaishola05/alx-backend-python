@@ -14,15 +14,15 @@ class TestGithubOrgClient(unittest.TestCase):
     A test class to test the public_repo_url function
     """
     @parameterized.expand([
-        ("google", {"repos_url": "https://api.github.com/orgs/google/repos"}),
-        ("abc", {"repos_url": "https://api.github.com/orgs/abc/repos"}),
+        ("google",),
+        ("abc",),
     ])
     @patch('client.get_json', autospec=True)
-    def test_org(self, company_name, expected_data, mock_get_json):
+    def test_org(self, company_name, mock_get_json):
         """Testing that GithubOrgClient.org returns
         the correct value and get_json is called once with expected arg
         """
-
+        expected_data = {"repos_url": f"https://api.github.com/orgs/{company_name}/repos"}
         mock_get_json.return_value = expected_data
         client = GithubOrgClient(company_name)
         actual_org_data = client.org
