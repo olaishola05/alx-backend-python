@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+
+"""Test cases for the public_repo_url function."""
+
+
+import unittest
+from unittest.mock import patch
+from client import GithubOrgClient
+from parameterized import parameterized
+
+
+class TestGithubOrgClient(unittest.TestCase):
+    """
+    A test class to test the public_repo_url function
+    """
+    @parameterized.expand([
+        ("google", "https://api.github.com/orgs/google/repos",
+         {"repos_url": "https://api.github.com/orgs/google/repos"}),
+        ("abc", "https://api.github.com/orgs/abc/repos",
+         {"repos_url": "https://api.github.com/orgs/abc/repos"}),
+    ])
+    @patch('client.get_json', autospec=True)
+    def test_org(self, company_name, repo_url, expected_data, mock_get_json):
+        """Testing that GithubOrgClient.org returns
+        the correct value and get_json is called once with expected arg
+        """
+
+        mock_get_json.return_value = expected_data
+        client = GithubOrgClient(company_name)
+        actual_org_data = client.org
+
+        self.assertEqual(actual_org_data, expected_data)
+        expected_url = client.ORG_URL.format(org=company_name)
+        mock_get_json.assert_called_once_with(expected_url)
+
+
+if __name__ == '__main__':
+    unittest.main()
