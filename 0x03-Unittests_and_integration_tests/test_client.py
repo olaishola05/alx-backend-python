@@ -1,37 +1,35 @@
 #!/usr/bin/env python3
-
-"""Test cases for the public_repo_url function."""
-
+"""Unit tests for GithubOrgClient.org"""
 
 import unittest
 from unittest.mock import patch
-from client import GithubOrgClient
 from parameterized import parameterized
+from client import GithubOrgClient
 
 
 class TestGithubOrgClient(unittest.TestCase):
-    """
-    A test class to test the public_repo_url function
-    """
+    """Test class for GithubOrgClient.org"""
+
     @parameterized.expand([
         ("google",),
         ("abc",),
     ])
-    @patch('client.get_json', autospec=True)
-    def test_org(self, company_name, mock_get_json):
-        """Testing that GithubOrgClient.org returns
-        the correct value and get_json is called once with expected arg
+    @patch('client.get_json')
+    def test_org(self, org_name, mock_get_json):
+        """Test that GithubOrgClient.org returns
+        correct data and get_json is called once
         """
+        url = f"https://api.github.com/orgs/{org_name}/repos"
+        expected_payload = {"repos_url": url}
+        mock_get_json.return_value = expected_payload
 
-        client = GithubOrgClient(company_name)
-        expected_data = {"repos_url": client.ORG_URL.format(org=company_name)}
-        mock_get_json.return_value = expected_data
-        actual_org_data = client.org
+        client = GithubOrgClient(org_name)
+        result = client.org
 
-        self.assertEqual(actual_org_data, expected_data)
-        expected_url = client.ORG_URL.format(org=company_name)
+        expected_url = client.ORG_URL.format(org=org_name)
+        self.assertEqual(result, expected_payload)
         mock_get_json.assert_called_once_with(expected_url)
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(argv=['first-arg-is-ignored'], exit=False)
