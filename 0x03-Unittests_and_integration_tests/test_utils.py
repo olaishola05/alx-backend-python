@@ -7,6 +7,7 @@ from parameterized import parameterized
 from utils import access_nested_map, get_json, memoize
 from unittest.mock import patch, MagicMock
 
+
 class TestAccessNestedMap(unittest.TestCase):
     """
     A test class to test the return value of the nested_map function
@@ -59,14 +60,15 @@ class TestMemoize(unittest.TestCase):
             def a_property(self):
                 return self.a_method()
 
-        with patch.object(TestClass, "a_method", return_value=42) as mock_method:
+        with patch.object(TestClass, "a_method", return_value=42) as mock_mthd:
             obj = TestClass()
             result1 = obj.a_property
             result2 = obj.a_property
 
             self.assertEqual(result1, 42)
             self.assertEqual(result2, 42)
-            mock_method.assert_called_once()
+            mock_mthd.assert_called_once()
+
 
 if __name__ == '__main__':
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
