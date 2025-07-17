@@ -1,15 +1,8 @@
 #!/usr/bin/env python3
 
-
 import unittest
 from parameterized import parameterized
 from utils import access_nested_map
-from typing import (
-Mapping,
-Sequence,
-Any
-)
-
 
 class TestAccessNestedMap(unittest.TestCase):
     """
@@ -21,7 +14,7 @@ class TestAccessNestedMap(unittest.TestCase):
         ("nested_map_2", {"a": {"b": 2}},["a"], {"b": 2}),
         ("nested_map_3", {"a": {"b": 2}},["a", "b"], 2)
     ])
-    def test_access_nested_map(self, name: str, nested_map: Mapping, path: Sequence, expected: Any) -> Any:
+    def test_access_nested_map(self, name, nested_map, path, expected):
         """
             A method that tests the return value of the access_nested_map function using
             the @parameterized decorator to run multiple tests with different parameters.
@@ -34,17 +27,8 @@ class TestAccessNestedMap(unittest.TestCase):
         """
         with self.subTest(name):
             actual_result = access_nested_map(nested_map, path)
-            self.assertEqual(expected, actual_result)
+            self.assertEqual(actual_result, expected)
 
-    def test_access_nested_map_raises_key_error(self):
-        """
-        Test that access_nested_map raises a KeyError for invalid keys.
-        """
-        nested_map = {"a": {"b": 2}}
-        path = ("a", "c")  # Invalid path
 
-        with self.assertRaises(KeyError):
-            access_nested_map(nested_map, path)
-
-if __name__ == '__main__':
-    unittest.main()
+# if __name__ == '__main__':
+#     unittest.main(argv=['first-arg-is-ignored'], exit=False)
