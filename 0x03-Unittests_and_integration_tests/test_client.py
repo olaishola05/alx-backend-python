@@ -14,7 +14,7 @@ class TestGithubOrgClient(unittest.TestCase):
         ("google", {"repos_url": "https://api.github.com/orgs/google/repos"}),
         ("abc", {"repos_url": "https://api.github.com/orgs/abc/repos"}),
     ])
-    @patch('client.get_json')
+    @patch('utils.get_json')
     def test_org(self, org_name, expected_data, mock_get_json):
         """Test that GithubOrgClient.org returns
         correct data and get_json is called once
