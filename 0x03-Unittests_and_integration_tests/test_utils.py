@@ -27,6 +27,7 @@ class TestAccessNestedMap(unittest.TestCase):
         ({"a": 1}, ("a", "b"), "b"),
     ])
     def test_access_nested_map_exception(self, nested_map, path, expected_key):
+        """Testing the access class method with exceptions"""
         with self.assertRaises(KeyError) as cm:
             access_nested_map(nested_map, path)
         self.assertEqual(str(cm.exception), f"'{expected_key}'")
@@ -43,6 +44,7 @@ class TestGetJson(unittest.TestCase):
     ])
     @patch('utils.requests.get')
     def test_get_json(self, test_url, test_payload, mock_requests):
+        """Testing the get_json function with multiple parameters"""
         mock_requests.json.return_value = test_payload
         self.assertTrue(get_json(test_url), test_payload)
 
@@ -53,12 +55,16 @@ class TestMemoize(unittest.TestCase):
     """
 
     def test_memoize(self):
+        """Testing the memoize decorator"""
         class TestClass:
+            """A test class to demonstrate the memoize decorator"""
             def a_method(self):
+                """A method that returns a value"""
                 return 42
 
             @memoize
             def a_property(self):
+                """A property that uses the memoize decorator"""
                 return self.a_method()
 
         with patch.object(TestClass, "a_method", return_value=42) as mock_mthd:
