@@ -5,7 +5,6 @@
 import unittest
 from parameterized import parameterized
 from utils import access_nested_map
-from typing import Mapping, Sequence, Any
 
 
 class TestAccessNestedMap(unittest.TestCase):
@@ -14,11 +13,11 @@ class TestAccessNestedMap(unittest.TestCase):
     """
 
     @parameterized.expand([
-        ("nested_map_1", {"a": 1}, ["a"], 1),
-        ("nested_map_2", {"a": {"b": 2}}, ["a"], {"b": 2}),
-        ("nested_map_3", {"a": {"b": 2}}, ["a", "b"], 2)
+        ({"a": 1}, ("a",), 1),
+        ({"a": {"b": 2}}, ("a",), {"b": 2}),
+        ({"a": {"b": 2}}, ("a", "b"), 2),
     ])
-    def test_access_nested_map(self, name: str, nested_map: Mapping, path: Sequence, expected: Any) -> None:
+    def test_access_nested_map(self, nested_map, path, expected):
         self.assertEqual(access_nested_map(nested_map, path), expected)
 
 
