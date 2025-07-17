@@ -14,10 +14,16 @@ class TestGithubOrgClient(unittest.TestCase):
         ("google",),
         ("abc",),
     ])
-    @patch("utils.get_json")
+    @patch("client.get_json")
     def test_org(self, org_name, mock_get_json):
-        url = f"https://api.github.com/orgs/{org_name}/repos"
-        expected_payload = {"repos_url": url}
+        # url = f"https://api.github.com/orgs/{org_name}/repos"
+        # expected_payload = {"repos_url": url}
+        expected_payload = {
+            "login": org_name,
+            "id": 123,
+            "url": f"https://api.github.com/orgs/{org_name}",
+            "repos_url": f"https://api.github.com/orgs/{org_name}/repos",
+        }
         mock_get_json.return_value = expected_payload
 
         client = GithubOrgClient(org_name)
