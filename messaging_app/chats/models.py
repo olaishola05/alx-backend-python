@@ -11,7 +11,7 @@ class User(AbstractUser):
     is_online = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
+    REQUIRED_FIELDS = ['username', 'password', 'first_name', 'last_name']
 
     def __str__(self):
         return self.username
