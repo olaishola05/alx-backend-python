@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """Unit tests for GithubOrgClient.org"""
-
+import sys
+import os
 import unittest
 from unittest.mock import patch
 from parameterized import parameterized
-import sys
-import os
+from client import GithubOrgClient
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from client import GithubOrgClient
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -31,7 +29,6 @@ class TestGithubOrgClient(unittest.TestCase):
 
         client = GithubOrgClient(org_name)
         result = client.org
-        print(result)
         expected_url = f"https://api.github.com/orgs/{org_name}"
         mock_get_json.assert_called_once_with(expected_url)
 
