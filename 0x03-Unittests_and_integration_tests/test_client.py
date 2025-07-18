@@ -20,7 +20,7 @@ class TestGithubOrgClient(unittest.TestCase):
 
         expected_payload = {
             "name": org_name,
-            "type": "Organization",
+            "type": "organization",
         }
         mock_get_json.return_value = expected_payload
 
