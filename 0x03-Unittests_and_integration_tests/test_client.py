@@ -4,6 +4,11 @@
 import unittest
 from unittest.mock import patch
 from parameterized import parameterized
+import sys
+import os
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from client import GithubOrgClient
 
 
@@ -20,13 +25,13 @@ class TestGithubOrgClient(unittest.TestCase):
 
         expected_payload = {
             "name": org_name,
-            "type": "organization",
+            "type": "Organization",
         }
         mock_get_json.return_value = expected_payload
 
         client = GithubOrgClient(org_name)
         result = client.org
-
+        print(result)
         expected_url = f"https://api.github.com/orgs/{org_name}"
         mock_get_json.assert_called_once_with(expected_url)
 
