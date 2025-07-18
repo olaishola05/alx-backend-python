@@ -16,21 +16,20 @@ class TestGithubOrgClient(unittest.TestCase):
     ])
     @patch("client.get_json")
     def test_org(self, org_name, mock_get_json):
-        # url = f"https://api.github.com/orgs/{org_name}/repos"
-        # expected_payload = {"repos_url": url}
+        """Test the org method of GithubOrgClient"""
+
         expected_payload = {
-            "login": org_name,
-            "repos_url": f"https://api.github.com/orgs/{org_name}/repos",
+            "name": org_name,
+            "type": "Organization",
         }
         mock_get_json.return_value = expected_payload
 
         client = GithubOrgClient(org_name)
         result = client.org
-
-        # expected_url = GithubOrgClient.ORG_URL.format(org=org_name)
         self.assertEqual(result, expected_payload)
-        mock_get_json.assert_called_once_with(f"https://api.github.com/orgs/{org_name}")
-        # print("Called with:", mock_get_json.call_args)
+
+        expected_url = f"https://api.github.com/orgs/{org_name}"
+        mock_get_json.assert_called_once_with(expected_url)
 
 
 if __name__ == '__main__':
