@@ -1,8 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from models import Message, Conversation
+from models import Message, Conversation, User
 
-User = get_user_model()
+# User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
