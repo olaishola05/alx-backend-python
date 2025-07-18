@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'messaging_app',
     'rest_framework',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -78,6 +79,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'messaging_app.wsgi.application'
 
+AUTH_USER_MODEL = 'messaging_app.User'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
