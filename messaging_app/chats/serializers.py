@@ -8,7 +8,7 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField(max_length=15)
     profile_photo = serializers.URLField(max_length=200)
-    email = serializers.EmailField(unique=True)
+    email = serializers.EmailField(required=True)
     is_online = serializers.BooleanField(default=False)
 
     class Meta:

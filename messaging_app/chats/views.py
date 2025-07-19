@@ -1,6 +1,21 @@
 from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
 from rest_framework import viewsets, permissions, filters, status
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.response import Response
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+@authentication_classes([])
+def root_welcome(request):
+    return Response({
+        "message": "Welcome to the Messaging API 👋",
+        "available_routes": {
+            "Conversations": "/api/conversations/",
+            "Messages": "/api/conversations/<conversation_id>/messages/"
+        }
+    })
 
 
 class ConversationViewSet(viewsets.ModelViewSet):

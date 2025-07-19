@@ -18,7 +18,10 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
+    # path('admin/', admin.site.urls),
+    # path('api/chats/', include('chats.urls')),
+    # path('api-auth/', include('rest_framework.urls')),
+    path('', include('chats.urls')),  # ✅ Includes the root welcome + /api/ routes
     path('admin/', admin.site.urls),
-    path('api/chats/', include('chats.urls')),
     path('api-auth/', include('rest_framework.urls')),
 ]
