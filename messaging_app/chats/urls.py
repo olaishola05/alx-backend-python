@@ -1,17 +1,12 @@
-from django.urls import path
+from django.urls import path, include
 from .views import (ConversationViewSet, MessageViewSet)
+from rest_framework.routers import DefaultRouter
 
-conversation_list = ConversationViewSet.as_view({
-    'get': 'list',
-    'post': 'create'
-})
+router = DefaultRouter()
 
-message_list = MessageViewSet.as_view({
-    'get': 'list',
-    'post': 'create'
-})
+router.register(r'conversations', ConversationViewSet, basename='conversation')
+router.register(r'messages', MessageViewSet, basename='message')
 
 urlpatterns = [
-    path('conversations/', conversation_list, name='conversation-list'),
-    path('messages/', message_list, name='message-list'),
+    path('', include(router.urls)),
 ]
