@@ -17,7 +17,7 @@ conversation_router.register(r'messages', MessageViewSet, basename='conversation
 # ]
 
 urlpatterns = [
-    path('', root_welcome, name='root-welcome'),  # ✅ This is now exclusive for the homepage
-    path('api/', include(router.urls)),           # ✅ All API endpoints go under /api/
+    path('', root_welcome, name='root-welcome'),
+    path('api/chats', include(router.urls)),
     path('api/', include(conversation_router.urls)),
 ]
