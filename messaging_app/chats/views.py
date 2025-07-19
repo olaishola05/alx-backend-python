@@ -1,6 +1,6 @@
 from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, filters, status
 
 
 class ConversationViewSet(viewsets.ModelViewSet):
