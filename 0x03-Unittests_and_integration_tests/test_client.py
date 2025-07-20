@@ -61,37 +61,36 @@ class TestGithubOrgClient(unittest.TestCase):
         # Verify the result matches the expected value
         self.assertEqual(result, expected_result)
 
+    @patch('client.get_json')
+    def test_public_repos(self, mock_get_json):
+        """Test that public_repos returns expected list of repos and calls
+        mocked methods once."""
+        # Mock payload for get_json
+        mock_repos_payload = [
+            {"name": "repo1", "license": {"key": "mit"}},
+            {"name": "repo2", "license": {"key": "apache-2.0"}},
+            {"name": "repo3", "license": None}
+        ]
+        mock_get_json.return_value = mock_repos_payload
 
-@patch('client.get_json')
-def test_public_repos(self, mock_get_json):
-    """Test that public_repos returns expected list of repos and calls
-    mocked methods once."""
-    # Mock payload for get_json
-    mock_repos_payload = [
-        {"name": "repo1", "license": {"key": "mit"}},
-        {"name": "repo2", "license": {"key": "apache-2.0"}},
-        {"name": "repo3", "license": None}
-    ]
-    mock_get_json.return_value = mock_repos_payload
+        # Use context manager to mock _public_repos_url
+        mock_url_path = 'client.GithubOrgClient._public_repos_url'
+        with patch(mock_url_path, new_callable=PropertyMock) as mock_url:
+            mock_url.return_value = "https://api.github.com/orgs/google/repos"
 
-    # Use context manager to mock _public_repos_url
-    mock_url_path = 'client.GithubOrgClient._public_repos_url'
-    with patch(mock_url_path, new_callable=PropertyMock) as mock_url:
-        mock_url.return_value = "https://api.github.com/orgs/google/repos"
+            # Create client instance and call public_repos
+            client = GithubOrgClient("google")
+            result = client.public_repos()
 
-        # Create client instance and call public_repos
-        client = GithubOrgClient("google")
-        result = client.public_repos()
+            # Verify the result is the expected list of repo names
+            expected_repos = ["repo1", "repo2", "repo3"]
+            self.assertEqual(result, expected_repos)
 
-        # Verify the result is the expected list of repo names
-        expected_repos = ["repo1", "repo2", "repo3"]
-        self.assertEqual(result, expected_repos)
+            # Verify mocked property was called once
+            mock_url.assert_called_once()
 
-        # Verify mocked property was called once
-        mock_url.assert_called_once()
-
-        # Verify get_json was called once
-        mock_get_json.assert_called_once()
+            # Verify get_json was called once
+            mock_get_json.assert_called_once()
 
 
 if __name__ == '__main__':
