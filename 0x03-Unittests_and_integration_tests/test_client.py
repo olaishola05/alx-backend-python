@@ -111,24 +111,24 @@ class TestGithubOrgClient(unittest.TestCase):
         # Verify the result matches the expected value
         self.assertEqual(result, expected_org_data)
 
-    # @patch('client.GithubOrgClient.org', new_callable=PropertyMock)
-    # def test__public_repos_url(self, mock_org_property: PropertyMock):
-    #     """Test that _public_repos_url returns the correct URL based on mocked org data."""
-    #     # Set up the mock return value for the org property
-    #     expected_repos_url = "https://api.github.com/orgs/test_org/repos_from_mock"
-    #     mock_org_property.return_value = {"repos_url": expected_repos_url}
-    #
-    #     # Create client instance (org_name doesn't strictly matter here as org is mocked)
-    #     client = GithubOrgClient("test_org")
-    #
-    #     # Access the _public_repos_url property
-    #     result_url = client._public_repos_url
-    #
-    #     # Verify GithubOrgClient.org property was accessed
-    #     mock_org_property.assert_called_once()
-    #
-    #     # Verify the result matches the expected repos_url
-    #     self.assertEqual(result_url, expected_repos_url)
+    @patch('client.GithubOrgClient.org', new_callable=PropertyMock)
+    def test__public_repos_url(self, mock_org_property: PropertyMock):
+        """Test that _public_repos_url returns the correct URL based on mocked org data."""
+        # Set up the mock return value for the org property
+        expected_repos_url = "https://api.github.com/orgs/test_org/repos_from_mock"
+        mock_org_property.return_value = {"repos_url": expected_repos_url}
+
+        # Create client instance (org_name doesn't strictly matter here as org is mocked)
+        client = GithubOrgClient("test_org")
+
+        # Access the _public_repos_url property
+        result_url = client._public_repos_url
+
+        # Verify GithubOrgClient.org property was accessed
+        mock_org_property.assert_called_once()
+
+        # Verify the result matches the expected repos_url
+        self.assertEqual(result_url, expected_repos_url)
 
     # @patch('client.get_json', autospec=True)
     # def test_public_repos(self, mock_get_json: MagicMock):
