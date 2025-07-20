@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 """Unit tests for GithubOrgClient.org"""
 import sys
 import os
@@ -66,6 +67,17 @@ class TestGithubOrgClient(unittest.TestCase):
 
             # Verify get_json was called once
             mock_get_json.assert_called_once()
+
+    @parameterized.expand([
+        ({"license": {"key": "my_license"}}, "my_license", True),
+        ({"license": {"key": "other_license"}}, "my_license", False),
+    ])
+    def test_has_license(self, repo, license_key, expected):
+        """Test that has_license returns expected boolean based on repo
+        license."""
+        client = GithubOrgClient("google")
+        result = client.has_license(repo, license_key)
+        self.assertEqual(result, expected)
 
 
 if __name__ == '__main__':
