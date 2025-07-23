@@ -25,6 +25,10 @@ class Conversation(models.Model):
     def __str__(self):
         return f"Conversation {self.conversation_id}"
 
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = 'Conversations'
+
 
 class Message(models.Model):
     message_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -37,3 +41,8 @@ class Message(models.Model):
 
     def __str__(self):
         return f"From {self.sender.username} at {self.sent_at}"
+
+    class Meta:
+        ordering = ['-sent_at']
+        verbose_name_plural = 'Messages'
+        unique_together = ('sender', 'conversation', 'message_body')

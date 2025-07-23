@@ -1,35 +1,92 @@
-from .models import Conversation, Message
-from .serializers import ConversationSerializer, MessageSerializer
+from .models import Conversation, Message, User
+from .serializers import ConversationSerializer, CustomTokenObtainPairSerializer, MessageSerializer, WelcomeSerializer, UserRegisterSerializer
 from rest_framework import viewsets, permissions, filters, status
-from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .permissions import IsAuthenticatedOrReadOnly
+from rest_framework import serializers
+from rest_framework.exceptions import PermissionDenied
+class WelcomeViewSet(viewsets.ViewSet):
+    """
+    API endpoint to get a welcome message and available routes.
+    """
+    permission_classes = [permissions.AllowAny]
 
+    def list(self, request):
+        serializer = WelcomeSerializer({})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+      
+class UserRegistrationView(viewsets.ModelViewSet):
+  """
+  Custom viiew to register new user
+  """
+  queryset = User.objects.all()
+  permission_classes = [permissions.AllowAny]
+  serializer_class = UserRegisterSerializer
+  http_method_names = ['post']
+  
+  def create(self, request, *args, **kwargs):
+    try:
+      serializer = self.get_serializer(data=request.data)
+      serializer.is_valid(raise_exception=True)
+      user = serializer.save()
+      serialized_user = UserRegisterSerializer(user)
+      return Response({
+        "message": "Registeration successful",
+        "user": serialized_user.data,
+      }, status=status.HTTP_201_CREATED)
+    except serializers.ValidationError as ve:
+      return Response({
+                "message": "Validation failed.",
+                "errors": ve.detail
+            }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+      return Response({
+                "message": "An unexpected error occurred.",
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-@api_view(['GET'])
-@permission_classes([permissions.AllowAny])
-@authentication_classes([])
-def root_welcome(request):
-    return Response({
-        "message": "Welcome to the Messaging API 👋",
-        "available_routes": {
-            "Conversations": "/api/conversations/",
-            "Messages": "/api/conversations/<conversation_id>/messages/"
-        }
-    })
+class CustomTokenObtainPairView(TokenObtainPairView):
+    """Custom view to obtain JWT tokens with additional user information.
+    """
+    serializer_class = CustomTokenObtainPairSerializer
+    permission_classes = [permissions.AllowAny]
+    
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
 
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as e:
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
+        # Get tokens from serializer
+        token_data = serializer.validated_data
+        access_token = token_data.get("access")
+        refresh_token = token_data.get("refresh")
+
+        # Prepare response
+        response = Response(token_data, status=status.HTTP_200_OK)
+
+        # Attach access token to header
+        response["Authorization"] = f"Bearer {access_token}"
+
+        return response
+    
+    
 class ConversationViewSet(viewsets.ModelViewSet):
     """
     API endpoint to get all conversations
     """
     queryset = Conversation.objects.all().order_by('created_at')
     serializer_class = ConversationSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        # Only show conversations the current user is a part of
+    permission_classes = [permissions.IsAuthenticated, IsAuthenticatedOrReadOnly]
+    
+    def get_queryset(self): # type: ignore
         return self.queryset.filter(participants=self.request.user)
-
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['title', 'participants__username']
+    
     def perform_create(self, serializer):
         conversation = serializer.save()
         conversation.participants.add(self.request.user)
@@ -42,9 +99,29 @@ class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
     permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return self.queryset.filter(conversation__participants=self.request.user)
+    
+    def get_queryset(self): # type: ignore
+        conversation_id = self.kwargs['conversation_pk']
+        return self.queryset.filter(
+            conversation__id=conversation_id,
+            conversation__participants=self.request.user
+        )
 
     def perform_create(self, serializer):
-        serializer.save(sender=self.request.user)
+        
+        conversation_id = self.kwargs['conversation_pk']
+        conversation = Conversation.objects.get(conversation_id=conversation_id)
+        
+        if self.request.user not in conversation.participants.all():
+            raise PermissionDenied("You are not part of this conversation")
+        serializer.save(sender=self.request.user, conversation=conversation)
+        
+    def perform_update(self, serializer):
+        if self.get_object().sender != self.request.user:
+            raise PermissionDenied("You can only edit your own message")
+        serializer.save()
+        
+    def perform_destroy(self, instance):
+        if instance.sender != self.request.user:
+            raise PermissionDenied("You can only delete your own messages")
+        instance.delete()
