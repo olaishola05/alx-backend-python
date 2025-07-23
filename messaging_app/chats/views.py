@@ -6,6 +6,9 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .permissions import IsAuthenticatedOrReadOnly, IsParticipantOfConversation
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
+from .pagination import MessagePagination
+from .filters import MessageFilter
+from django_filters.rest_framework import DjangoFilterBackend
 class WelcomeViewSet(viewsets.ViewSet):
     """
     API endpoint to get a welcome message and available routes.
@@ -99,6 +102,9 @@ class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
     permission_classes = [permissions.IsAuthenticated, IsParticipantOfConversation]
+    pagination_class = MessagePagination
+    filter_backends = [DjangoFilterBackend]
+    filters_class = MessageFilter
     
     def get_queryset(self): # type: ignore
         if not self.request.user or not self.request.user.is_authenticated:
