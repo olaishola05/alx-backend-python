@@ -3,7 +3,7 @@ from .serializers import ConversationSerializer, CustomTokenObtainPairSerializer
 from rest_framework import viewsets, permissions, filters, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .permissions import IsAuthenticatedOrReadOnly
+from .permissions import IsAuthenticatedOrReadOnly, IsParticipantOfConversation
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
 class WelcomeViewSet(viewsets.ViewSet):
@@ -98,19 +98,16 @@ class MessageViewSet(viewsets.ModelViewSet):
     """
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsParticipantOfConversation]
     
     def get_queryset(self): # type: ignore
+        if not self.request.user or not self.request.user.is_authenticated:
+            return Response({"detail": "You are not allowed to perform this action."},
+                    status=status.HTTP_403_FORBIDDEN)
         user = self.request.user
-        # conversation_id = self.kwargs['conversation_pk']
-        # return self.queryset.filter(
-            # conversation__id=conversation_id,
-            # conversation__participants=self.request.user
-        # )
         return Message.objects.filter(conversation__participants=user)
 
     def perform_create(self, serializer):
-        
         conversation_id = self.kwargs['conversation_pk']
         conversation = Conversation.objects.get(conversation_id=conversation_id)
         
