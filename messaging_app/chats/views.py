@@ -101,11 +101,13 @@ class MessageViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self): # type: ignore
-        conversation_id = self.kwargs['conversation_pk']
-        return self.queryset.filter(
-            conversation__id=conversation_id,
-            conversation__participants=self.request.user
-        )
+        user = self.request.user
+        # conversation_id = self.kwargs['conversation_pk']
+        # return self.queryset.filter(
+            # conversation__id=conversation_id,
+            # conversation__participants=self.request.user
+        # )
+        return Message.objects.filter(conversation__participants=user)
 
     def perform_create(self, serializer):
         
