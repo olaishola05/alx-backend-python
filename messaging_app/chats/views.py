@@ -1,5 +1,5 @@
 from .models import Conversation, Message, User
-from .serializers import ConversationSerializer, CustomTokenObtainPairSerializer, MessageSerializer, WelcomeSerializer, UserRegisterSerializer
+from .serializers import ConversationSerializer, CustomTokenObtainPairSerializer, MessageSerializer, WelcomeSerializer, UserRegisterSerializer, UserSerializer
 from rest_framework import viewsets, permissions, filters, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -104,12 +104,12 @@ class MessageViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsParticipantOfConversation]
     pagination_class = MessagePagination
     filter_backends = [DjangoFilterBackend]
-    filters_class = MessageFilter
+    filter_class = MessageFilter
     
     def get_queryset(self): # type: ignore
         if not self.request.user or not self.request.user.is_authenticated:
-            return Response({"detail": "You are not allowed to perform this action."},
-                    status=status.HTTP_403_FORBIDDEN)
+          raise PermissionDenied("You are not allowed to perform this action.")
+
         user = self.request.user
         return Message.objects.filter(conversation__participants=user)
 
@@ -130,3 +130,8 @@ class MessageViewSet(viewsets.ModelViewSet):
         if instance.sender != self.request.user:
             raise PermissionDenied("You can only delete your own messages")
         instance.delete()
+
+class AdminUserListViewSet(viewsets.ReadOnlyModelViewSet):
+  queryset = User.objects.all()
+  serializer_class = UserSerializer
+  permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]

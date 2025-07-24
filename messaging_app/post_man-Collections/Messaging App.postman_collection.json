@@ -1,0 +1,173 @@
+{
+	"info": {
+		"_postman_id": "6a837252-ed6d-418e-8925-e2611903f753",
+		"name": "Messaging App",
+		"description": "A messaging app built with Django Rest Framework API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "17973789"
+	},
+	"item": [
+		{
+			"name": "auths",
+			"item": [
+				{
+					"name": "Register user",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"gin_doe\",\n  \"email\": \"gin@example.com\",\n  \"first_name\": \"Jane\",\n  \"last_name\": \"Doe\",\n  \"password\": \"strongpassword123\",\n  \"password_confirm\": \"strongpassword123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "http://127.0.0.1:8000/auth/register/"
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {}
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"olaish@example.com\",\n    \"password\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "http://127.0.0.1:8000/auth/token/"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Conversations",
+			"item": [
+				{
+					"name": "Get All Conversations",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "Create message using Conversation ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{message_app_token}}"
+							}
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message_body\": \"Hi! There\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{messaging_app_base_url}}/conversations/0b2b81dc-8ca5-465d-8fcf-fbf824565549/messages"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All messages by a conversation",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{message_app_token}}"
+							}
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message_body\": \"Hi! There\"\n}"
+						},
+						"url": "{{messaging_app_base_url}}/conversations/0b2b81dc-8ca5-465d-8fcf-fbf824565549/messages"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Coversation",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{message_app_token}}"
+							}
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"participants\": [\"52aa930d-cb2c-4d33-9714-d5ff189786a5\", \"0ae87dc3-8fbd-4e03-adb3-61ce2b1a553f\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{messaging_app_base_url}}/conversations/"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin Endpoints",
+			"item": [
+				{
+					"name": "Get Users",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{message_app_token}}"
+							}
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"olaish@example.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": "{{messaging_app_base_url}}/admin/users/"
+					},
+					"response": []
+				}
+			],
+			"description": "These endpoints are only accessible to some with the role os is_staff or with super user privilege"
+		}
+	],
+	"variable": [
+		{
+			"key": "access_token",
+			"value": "eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUzMjg5MTAzLCJpYXQiOjE3NTMyODU1MDMsImp0aSI6IjY1NDYzMDBjMWY4ZTRjNzY5YTY0ODg0MzEyYjU4OTNmIiwidXNlcl9pZCI6IjBiMmI4MWRjLThjYTUtNDY1ZC04ZmNmLWZiZjgyNDU2NTU0OSIsInVzZXJuYW1lIjoib2xhaXNoIiwiZW1haWwiOiJvbGFpc2hAZXhhbXBsZS5jb20iLCJpc19zdGFmZiI6dHJ1ZX0"
+		}
+	]
+}

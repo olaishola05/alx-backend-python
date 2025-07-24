@@ -95,13 +95,14 @@ class UserRegisterSerializer(serializers.ModelSerializer):
   
 class UserSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField(max_length=15)
-    profile_photo = serializers.URLField(max_length=200)
+    profile_picture = serializers.URLField(max_length=200)
     email = serializers.EmailField(required=True)
     is_online = serializers.BooleanField(default=False)
 
     class Meta:
         model = User
-        fields = ['user_id', 'first_name', 'last_name', 'email']
+        # fields = ['user_id', 'first_name', 'last_name', 'email', 'profile_photo']
+        fields = '__all__'
         read_only_fields = ['user_id', 'date_joined']
 
 
@@ -114,12 +115,13 @@ class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
         fields = ['message_id', 'sender_id', 'message_body', 'sent_at', 'sender_name']
-        read_only_fields = ['sender']
+        read_only_fields = ['sender_id']
 
 
 class ConversationSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
-        if attrs['participants'].count() < 2:
+        print(attrs)
+        if len(attrs['participants']) < 2:
             raise serializers.ValidationError("A conversation must include at least 2 participants.")
         return attrs
 
