@@ -1,7 +1,9 @@
 import time
 import logging
-from datetime import datetime, time as t
+from datetime import datetime, time as t, timedelta
 from rest_framework import status
+from django.http import HttpResponseForbidden
+from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +63,50 @@ class RequestLoggingMiddleware:
       
       return response
         
-    
+class OffensiveLanguageMiddleware:
+  """
+  Middleware that limits the number of chat messages a user can send within a certain time window, based on their IP address
+  """
+  def __init__(self, get_response) -> None:
+     self.get_response = get_response
+     
+  def __call__(self, request):
+      if request.user._is_authenticated and request.method == 'POST':
+          identifier = f"user_{request.user.user_id}-ip{self.get_client_ip(request=request)}"
+      else:
+          identifier = f"ip_{self.get_client_ip(request=request)}"
+          
+      if not identifier:
+          return self.get_response(request)
+      
+                  
+      cache_key = f"rate_limit{identifier}"
+      request_timestamps = cache.get(cache_key, [])
+      
+      current_time = datetime.now()
+      time_window_start = current_time - timedelta(minutes=1)
+      recent_timestamps = [ts for ts in request_timestamps if ts > time_window_start]
+      
+      recent_timestamps.append(current_time)
+      
+      MAX_MESSAGES_PER_MINUTE = 5
+      
+      if len(recent_timestamps) > MAX_MESSAGES_PER_MINUTE:
+          return HttpResponseForbidden("You have exceeded the message limit. Please wait a minute before sending more messages.")
+      else:
+          cache.set(cache_key, recent_timestamps, timeout=65)
+          
+      response = self.get_response(request)
+      return response
+     
+   
+  def get_client_ip(self, request):
+     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+     if x_forwarded_for:
+        return x_forwarded_for.split(',')[0]
+     return request.META.get('REMOTE_ADDR')
+
+
 def check_access_time():
     """
     Checks if the current time is within the allowed access window.
