@@ -2,7 +2,7 @@ import time
 import logging
 from datetime import datetime, time as t, timedelta
 from rest_framework import status
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, HttpResponseNotAllowed
 from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
@@ -106,6 +106,23 @@ class OffensiveLanguageMiddleware:
         return x_forwarded_for.split(',')[0]
      return request.META.get('REMOTE_ADDR')
 
+class RolepermissionMiddleware:
+    """
+    A middleware that checks the user’s role i.e admin, before allowing access to specific actions
+    """
+    
+    def __init__(self, get_response) -> None:
+       self.get_response = get_response
+       
+    def __call__(self, request):
+       if not request.user.is_authenticated:
+           return HttpResponseNotAllowed("Unathenticated user, action not allowed")
+       privilege_roles = ['admin', 'moderator']
+       if not request.user.groups.filter(name__in=privilege_roles):
+           return HttpResponseForbidden("You have exceeded the message limit. Please wait a minute before sending more messages.")
+       
+       response = self.get_response(request)
+       return response
 
 def check_access_time():
     """
