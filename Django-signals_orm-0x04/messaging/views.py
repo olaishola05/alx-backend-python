@@ -242,7 +242,8 @@ class MessageViewSet(viewsets.ModelViewSet):
         URL: /api/conversations/{pk}/messages/unread_inbox/
         """
         base_messages_in_conv = Message.objects.filter(conversation_id=conversation_pk)
-        unread_messages = base_messages_in_conv.unread_object.for_user(request.user).select_related('sender', 'parent_message') # type: ignore
+        unread_messages = base_messages_in_conv.unread.unread_for_user(request.user).select_related('sender', 'parent_message').only('id', 'sender', 'content', 'created_at', 'conversation') # type: ignore
+        
         serializer = self.get_serializer(unread_messages, many=True)
         return Response(serializer.data)
     
@@ -261,7 +262,7 @@ class MessageViewSet(viewsets.ModelViewSet):
         if not message_ids:
             return Response({"detail": "No message IDs provided."}, status=status.HTTP_400_BAD_REQUEST)
 
-        updated_count = Message.objects.filter(conversation_id=conversation_pk).unread_objects.mark_as_read(request.user, message_ids) # type: ignore
+        updated_count = Message.objects.filter(conversation_id=conversation_pk).unread.mark_as_read(request.user, message_ids) # type: ignore
 
         return Response(
             {"detail": f"Successfully marked {updated_count} messages as read."},
