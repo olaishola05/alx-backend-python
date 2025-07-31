@@ -159,59 +159,6 @@ class ConversationViewSet(viewsets.ModelViewSet):
 
         return Response(threaded_data)
 
-
-
-# class MessageViewSet(viewsets.ModelViewSet):
-    # """
-    # API endpoint to get all the Messages
-    # """
-    # queryset = Message.objects.all()
-    # # top_level_messages = Message.objects.filter(parent_message__isnull=True).prefetch_related('replies').order_by('created_at')
-    # serializer_class = MessageSerializer
-    # permission_classes = [permissions.IsAuthenticated, IsParticipantOfConversation]
-    # pagination_class = MessagePagination
-    # filter_backends = [DjangoFilterBackend]
-    # filter_class = MessageFilter
-    # 
-    # for message in top_level_messages:
-        # print(f"Top Message: {message.content}")
-        # for reply in message.replies.all(): # type: ignore
-            # print(f"  - Direct Reply: {reply.content}")
-            # 
-    # message_with_parent = Message.objects.select_related('parent_message').get(id=123)
-    # if message_with_parent.parent_message:
-        # print(f"Message: {message_with_parent.content}, Parent: {message_with_parent.parent_message.content}")
-    # else:
-        # print(f"Message: {message_with_parent.content}, This is a top-level message.")
-    # 
-    # # message_and_relations = Message.objects.select_related('parent_message').prefetch_related('replies').get(id=123)
-    # 
-    # def get_queryset(self): # type: ignore
-        # if not self.request.user or not self.request.user.is_authenticated:
-        #   raise PermissionDenied("You are not allowed to perform this action.")
-# 
-        # user = self.request.user
-        # return Message.objects.filter(conversation__participants=user)
-# 
-    # def perform_create(self, serializer):
-        # conversation_id = self.kwargs['conversation_pk']
-        # conversation = Conversation.objects.get(conversation_id=conversation_id)
-        # 
-        # if self.request.user not in conversation.participants.all():
-            # raise PermissionDenied("You are not part of this conversation")
-        # serializer.save(sender=self.request.user, conversation=conversation)
-        # 
-    # def perform_update(self, serializer):
-        # if self.get_object().sender != self.request.user:
-            # raise PermissionDenied("You can only edit your own message")
-        # serializer.save()   
-        # 
-    # def perform_destroy(self, instance):
-        # if instance.sender != self.request.user:
-            # raise PermissionDenied("You can only delete your own messages")
-        # instance.delete()
-# 
-
 class MessageViewSet(viewsets.ModelViewSet):
     """
     API endpoint to manage Messages within conversations.
@@ -288,6 +235,39 @@ class MessageViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
     
+    @action(detail=False, methods=['get'])
+    def unread_inbox(self, request, conversation_pk=None):
+        """
+        Returns unread messages for the requesting user within the specified conversation.
+        URL: /api/conversations/{pk}/messages/unread_inbox/
+        """
+        base_messages_in_conv = Message.objects.filter(conversation_id=conversation_pk)
+        unread_messages = base_messages_in_conv.unread_object.for_user(request.user).select_related('sender', 'parent_message') # type: ignore
+        serializer = self.get_serializer(unread_messages, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['post'])
+    def mark_as_read(self, request, conversation_pk=None):
+        """
+        Marks specified messages as read for the requesting user within the conversation.
+        Expects a list of message IDs in the request body: {"message_ids": [1, 2, 3]}
+        URL: /api/conversations/{pk}/messages/mark_as_read/
+        """
+        message_ids = request.data.get('message_ids')
+
+        if not isinstance(message_ids, list):
+            return Response({"detail": "message_ids must be a list."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not message_ids:
+            return Response({"detail": "No message IDs provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        updated_count = Message.objects.filter(conversation_id=conversation_pk).unread_objects.mark_as_read(request.user, message_ids) # type: ignore
+
+        return Response(
+            {"detail": f"Successfully marked {updated_count} messages as read."},
+            status=status.HTTP_200_OK
+        )
+        
 class AdminUserListViewSet(viewsets.ReadOnlyModelViewSet):
   queryset = User.objects.all()
   serializer_class = UserSerializer

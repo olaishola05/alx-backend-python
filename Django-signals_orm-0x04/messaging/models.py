@@ -29,7 +29,29 @@ class Conversation(models.Model):
         ordering = ['-created_at']
         verbose_name_plural = 'Conversations'
         
+class UnreadMessagesManager(models.Manager):
+  def for_user(self, user):
+    """
+        Filters messages that are unread AND where the given user is the receiver.
+        Optimizes by only retrieving essential fields.
+        """
+    return self.filter(
+      receiver=user,
+      is_read=False,
+    ).only('id', 'sender', 'content', 'created_at', 'conversation') # added conversation for relative lookup
+    
+  def mark_as_read(self, user, message_ids):
+    """
+        Marks a list of messages as read for a specific user,
+        ensuring the user is indeed the receiver of those messages.
+        """
         
+    return self.filter(
+      receiver=user,
+      id__in=message_ids,
+      is_read=False
+    ).update(is_read=True)
+          
 class Message(models.Model):
   message_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
   sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages',
@@ -59,6 +81,9 @@ class Message(models.Model):
   
   def __str__(self) -> str:
       return f"Message from {self.sender.username} to {self.receiver.username}: {self.content[:50]}..."
+  
+  objects = models.Manager()
+  unread_objects = UnreadMessagesManager()
     
   class Meta:
     ordering = ['-timestamp']

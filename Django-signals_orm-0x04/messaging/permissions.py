@@ -1,4 +1,5 @@
 from rest_framework import permissions
+from .models import Conversation
 
 
 class IsOwnerOrParticipantOrReadOnly(permissions.BasePermission):
@@ -81,8 +82,28 @@ class IsConversationParticipant(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return request.user in obj.participants.all()
-      
+
 class IsParticipantOfConversation(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        if view.action in ['list', 'create', 'top_messages', 'unread_inbox', 'mark_as_read']: # Add new actions here
+            conversation_pk = view.kwargs.get('conversation_pk')
+            if not conversation_pk:
+                return False 
+            try:
+                conversation = Conversation.objects.get(pk=conversation_pk)
+                return request.user in conversation.participants.all()
+            except Conversation.DoesNotExist:
+                return False
+        
+        return True
+
+    def has_object_permission(self, request, view, obj):
+        return request.user in obj.conversation.participants.all()
+
+# class IsParticipantOfConversation(permissions.BasePermission):
     """
     Allow only participants of a conversation to access it.
     Only allow PUT, PATCH, DELETE if user is a participant and authenticated.
