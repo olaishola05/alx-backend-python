@@ -253,7 +253,8 @@ class MessageViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("You are not part of this conversation.")
 
         # Save the message, linking it to the current user as sender and the conversation
-        serializer.save(sender=self.request.user, conversation=conversation)
+        request = self.request
+        serializer.save(sender=request.user, conversation=conversation)
 
     def perform_update(self, serializer):
         if self.get_object().sender != self.request.user:
