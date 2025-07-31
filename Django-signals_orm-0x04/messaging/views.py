@@ -39,7 +39,7 @@ class UserViewSet(viewsets.ViewSet):
      return [permission() for permission in permission_classes]
  
   @action(detail=True, methods=['delete'])
-  def delete_account(self, request, pk=None):
+  def delete_user(self, request, pk=None):
       """
         Allows an authenticated user to delete their own account.
       """
