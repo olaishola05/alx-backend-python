@@ -1,7 +1,7 @@
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.contrib.auth.models import User
-from .models import Message, Notification, NotificationType
+from .models import Message, Notification, NotificationType, MessageHistory
 import logging
 from real_time import send_realtime_notification
 
@@ -61,3 +61,22 @@ def handle_message_read_notification(sender, instance, created, **kwargs):
                 
             except Exception as e:
                 logger.error(f"❌ Failed to create read notification: {str(e)}")
+                
+@receiver(pre_save, sender=Message)
+def save_message_history(sender, instance, **kwargs):
+    """
+    Signal to auto save message if it is edited
+    """
+    
+    if instance.pk:
+      try:
+        old_message_instance = sender.objects.get(pk=instance.pk)
+        MessageHistory.objects.create(
+          message = instance,
+          old_content = old_message_instance.content,
+          changed_by = instance.user
+        )
+        logger.info(f"Old version of Message {instance.pk} saved to history.")
+      except Message.DoesNotExist:
+        logger.error(f"Message instance does not exist")
+        

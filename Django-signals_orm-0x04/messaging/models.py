@@ -3,7 +3,6 @@ from django.contrib.auth.models import AbstractUser
 import uuid
 from datetime import datetime
 
-
 class User(AbstractUser):
     user_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
@@ -40,6 +39,7 @@ class Message(models.Model):
   content = models.TextField(max_length=1000, help_text="The actual message content")
   timestamp = models.DateTimeField(default=datetime.now, db_index=True,help_text="When the message was created")
   is_read = models.BooleanField(default=False)
+  edited = models.BooleanField(default=False)
   
   def __str__(self) -> str:
       return f"Message from {self.sender.username} to {self.receiver.username}: {self.content[:50]}..."
@@ -107,3 +107,22 @@ class Notification(models.Model):
     if not self.is_read:
       self.is_read = True
       self.save(update_fields=['is_read'])
+      
+      
+class MessageHistory(models.Model):
+    history = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='old_message')
+    old_content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    changed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+    
+    def __str__(self):
+        return f"Saved {self.message.content} for {self.message.sender} in history table"
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = 'Notifcations'
+        unique_together = ['user', 'messages']
+        indexes = [
+          models.Index(fields=['user', '-created_at']),
+        ]
