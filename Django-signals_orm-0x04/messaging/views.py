@@ -44,8 +44,8 @@ class UserViewSet(viewsets.ViewSet):
         Allows an authenticated user to delete their own account.
       """
       
-      user_to_delete = self.get_object() # type: ignore
-      if user_to_delete != request.user:
+      user = self.get_object() # type: ignore
+      if user != request.user:
           return Response(
               {"detail": "You do not have permission to delete this account"},
               status=status.HTTP_403_FORBIDDEN
@@ -56,7 +56,7 @@ class UserViewSet(viewsets.ViewSet):
                 {"detail": "Please provide your password to confirm account deletion."},
                 status=status.HTTP_401_UNAUTHORIZED
           )
-      user_to_delete.delete()
+      user.delete()
       return Response(status=status.HTTP_204_NO_CONTENT)
           
    
