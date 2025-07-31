@@ -1,4 +1,4 @@
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_save, pre_save, post_delete
 from django.dispatch import receiver
 from django.contrib.auth.models import User
 from .models import Message, Notification, NotificationType, MessageHistory
@@ -80,3 +80,31 @@ def save_message_history(sender, instance, **kwargs):
       except Message.DoesNotExist:
         logger.error(f"Message instance does not exist")
         
+@receiver(post_delete, sender=User)
+def clean_up_signal(sender, instance, **kwargs):
+    user_id = instance.pk
+    logger.info((f"User with ID {user_id} has been deleted. Performing cleanup..."))
+    
+    if user_id:
+        try:
+            messages_sent_by_user = Message.objects.filter(sender=user_id)
+            messages_received_by_user = Message.objects.filter(receiver=user_id)
+            # count_sent = messages_sent_by_user.count()
+            count_sent, _ =messages_sent_by_user.delete()
+            count_received, _ = messages_received_by_user.delete()
+            logger.info(f"Deleted {count_sent} messages sent by user {user_id}.")
+            logger.info(f"Deleted {count_received} messages received by user {user_id}.")
+            
+            notifications_for_user = Notification.objects.filter(user=user_id)
+            notifications_count = notifications_for_user.count()
+            logger.info(f"Deleted {notifications_count} notifications for user {user_id}.")
+            
+            if instance.profile_picture:
+                instance.profile_profile_picture.delete(save=False)
+                logger.info(f"Deleted profile picture for user {user_id}")
+        except User.DoesNotExist as e:
+            logger.error(f"User does not exist {str(e)}")
+        except Exception as e:
+            logger.error(f" fatal error {str(e)}")
+            
+    logger.info(f"Explicit cleanup for user {user_id} complete.")

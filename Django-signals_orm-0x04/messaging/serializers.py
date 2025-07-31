@@ -103,7 +103,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         # fields = ['user_id', 'first_name', 'last_name', 'email', 'profile_photo']
         fields = '__all__'
-        read_only_fields = ['user_id', 'date_joined']
+        read_only_fields = ['user_id', 'date_joined', 'email']
 
 
 class MessageSerializer(serializers.ModelSerializer):

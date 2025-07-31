@@ -9,6 +9,8 @@ from rest_framework.exceptions import PermissionDenied
 from .pagination import MessagePagination
 from .filters import MessageFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.decorators import action
+
 class WelcomeViewSet(viewsets.ViewSet):
     """
     API endpoint to get a welcome message and available routes.
@@ -18,7 +20,46 @@ class WelcomeViewSet(viewsets.ViewSet):
     def list(self, request):
         serializer = WelcomeSerializer({})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class UserViewSet(viewsets.ViewSet):
+  queryset = User.objects.all()
+  serializer = UserSerializer
+  permission_classes = [permissions.IsAuthenticated]
+  
+  def get_permissions(self):
+     
+     if self.action == 'list':
+       permission_classes = [permissions.IsAdminUser]
+     elif self.action == 'retrieve':
+       permission_classes = [permissions.IsAuthenticated]
+     elif self.action == 'destroy':
+       permission_classes = [permissions.IsAdminUser]
+     else:
+       permission_classes = [permissions.IsAuthenticated]
+     return [permission() for permission in permission_classes]
+ 
+  @action(detail=True, methods=['delete'])
+  def delete_account(self, request, pk=None):
+      """
+        Allows an authenticated user to delete their own account.
+      """
       
+      user_to_delete = self.get_object() # type: ignore
+      if user_to_delete != request.user:
+          return Response(
+              {"detail": "You do not have permission to delete this account"},
+              status=status.HTTP_403_FORBIDDEN
+          )
+          
+      if not request.data.get('password') or not request.user.check_password(request.data.get('password')):
+          return Response(
+                {"detail": "Please provide your password to confirm account deletion."},
+                status=status.HTTP_401_UNAUTHORIZED
+          )
+      user_to_delete.delete()
+      return Response(status=status.HTTP_204_NO_CONTENT)
+          
+   
 class UserRegistrationView(viewsets.ModelViewSet):
   """
   Custom viiew to register new user
