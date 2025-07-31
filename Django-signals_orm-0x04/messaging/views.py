@@ -11,6 +11,8 @@ from .filters import MessageFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from .utils import build_threaded_messages
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 
 class WelcomeViewSet(viewsets.ViewSet):
     """
@@ -174,6 +176,7 @@ class MessageViewSet(viewsets.ModelViewSet):
 
     queryset = Message.objects.all()
 
+    @method_decorator(cache_page(60))
     def get_queryset(self): # type: ignore
         conversation_pk = self.kwargs.get('conversation_pk')
         if not conversation_pk:
@@ -214,6 +217,7 @@ class MessageViewSet(viewsets.ModelViewSet):
         instance.delete()
         
     @action(detail=False, methods=['get'])
+    @method_decorator(cache_page(60))
     def top_messages(self, request, conversation_pk=None):
         """
         Returns only the top-level messages (messages without a parent)
@@ -236,6 +240,7 @@ class MessageViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     @action(detail=False, methods=['get'])
+    @method_decorator(cache_page(60))
     def unread_inbox(self, request, conversation_pk=None):
         """
         Returns unread messages for the requesting user within the specified conversation.
