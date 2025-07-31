@@ -9,6 +9,9 @@ from rest_framework.exceptions import PermissionDenied
 from .pagination import MessagePagination
 from .filters import MessageFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+
 class WelcomeViewSet(viewsets.ViewSet):
     """
     API endpoint to get a welcome message and available routes.
@@ -106,6 +109,7 @@ class MessageViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filter_class = MessageFilter
     
+    @method_decorator(cache_page(60))
     def get_queryset(self): # type: ignore
         if not self.request.user or not self.request.user.is_authenticated:
           raise PermissionDenied("You are not allowed to perform this action.")
