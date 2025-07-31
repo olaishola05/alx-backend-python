@@ -40,6 +40,8 @@ class Message(models.Model):
   timestamp = models.DateTimeField(default=datetime.now, db_index=True,help_text="When the message was created")
   is_read = models.BooleanField(default=False)
   edited = models.BooleanField(default=False)
+  edited_at = models.DateTimeField(auto_now_add=True)
+  edited_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
   
   def __str__(self) -> str:
       return f"Message from {self.sender.username} to {self.receiver.username}: {self.content[:50]}..."
