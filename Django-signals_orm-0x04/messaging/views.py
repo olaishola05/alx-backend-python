@@ -241,8 +241,8 @@ class MessageViewSet(viewsets.ModelViewSet):
         Returns unread messages for the requesting user within the specified conversation.
         URL: /api/conversations/{pk}/messages/unread_inbox/
         """
-        base_messages_in_conv = Message.objects.filter(conversation_id=conversation_pk)
-        unread_messages = base_messages_in_conv.unread.unread_for_user(request.user).select_related('sender', 'parent_message').only('id', 'sender', 'content', 'created_at', 'conversation') # type: ignore
+        # base_messages_in_conv = Message.objects.filter(conversation_id=conversation_pk)
+        unread_messages = Message.unread.unread_for_user(request.user).select_related('sender', 'parent_message').only('id', 'sender', 'content', 'created_at', 'conversation') # type: ignore
         
         serializer = self.get_serializer(unread_messages, many=True)
         return Response(serializer.data)
