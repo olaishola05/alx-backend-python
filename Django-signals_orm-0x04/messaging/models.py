@@ -42,6 +42,20 @@ class Message(models.Model):
   edited = models.BooleanField(default=False)
   edited_at = models.DateTimeField(auto_now_add=True)
   edited_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+  parent_message = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='replies'
+    )
+  
+  root_message = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True, blank=True,
+        related_name='thread_messages'
+    )
   
   def __str__(self) -> str:
       return f"Message from {self.sender.username} to {self.receiver.username}: {self.content[:50]}..."
@@ -62,7 +76,18 @@ class Message(models.Model):
         self.save(update_fields=['is_read'])
         
         
-        
+  # override save() to set root_message
+  def save(self, *args, **kwargs):
+      if not self.pk and not self.parent_message: # New top-level message
+          super().save(*args, **kwargs) # Save to get PK
+          self.root_message = self # Set self as root
+          self.save(update_fields=['root_message']) # Save again to update root_message
+      elif self.parent_message and not self.root_message: # Reply, inherit root
+          self.root_message = self.parent_message.root_message if self.parent_message.root_message else self.parent_message
+          super().save(*args, **kwargs)
+      else:
+          super().save(*args, **kwargs)
+          
 class NotificationType(models.TextChoices):
     """
     Enum for different notification types

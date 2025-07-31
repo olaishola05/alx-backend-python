@@ -140,3 +140,59 @@ class NotificationManager:
         
         return Notification.objects.filter(user=user, is_read=False).count()
 
+def build_threaded_messages(messages_queryset):
+    """
+    Takes a queryset of Message objects (already optimized with select_related)
+    and organizes them into a threaded (nested) dictionary structure.
+    Assumes messages are sorted by created_at for proper ordering.
+    """
+    message_map = {}
+    for msg in messages_queryset:
+        # Create a dictionary for each message, including relevant fields
+        # Note: We're directly accessing related objects (sender, receiver, parent_message)
+        # because the queryset is optimized with select_related.
+        msg_data = {
+            'id': msg.id,
+            'sender': {
+                'id': msg.sender.id,
+                'username': msg.sender.username,
+                # Add other sender fields if needed
+            },
+            'receiver': {
+                'id': msg.receiver.id,
+                'username': msg.receiver.username,
+                # Add other receiver fields if needed
+            },
+            'content': msg.content,
+            'created_at': msg.created_at,
+            'updated_at': msg.updated_at,
+            'parent_id': msg.parent_message_id, # Access FK ID directly
+            'replies': [] # Placeholder for child replies
+        }
+        message_map[msg.id] = msg_data
+
+    threaded_list = []
+
+    for msg_id, msg_data in message_map.items():
+        parent_id = msg_data['parent_id']
+        if parent_id is None:
+            # This is a top-level message in the current set of messages
+            threaded_list.append(msg_data)
+        else:
+            # This is a reply, add it to its parent's replies list
+            if parent_id in message_map:
+                message_map[parent_id]['replies'].append(msg_data)
+            # else: # Optional: If a parent message is not in the current queryset (e.g., filtered out),
+                   # you might want to treat this message as a top-level message.
+                   # threaded_list.append(msg_data)
+
+    # Recursively sort replies by creation date
+    def sort_replies_recursively(message_list):
+        message_list.sort(key=lambda x: x['created_at'])
+        for msg_data in message_list:
+            if msg_data['replies']:
+                sort_replies_recursively(msg_data['replies'])
+
+    sort_replies_recursively(threaded_list)
+
+    return threaded_list
