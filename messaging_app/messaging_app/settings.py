@@ -30,11 +30,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-7)@uzp@tx^=42nbf)&^p1+%81sp%!+3^xp7bw!t8ycvn!=3=ch')
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = [
-    '127.0.0.1',
-    'localhost',
-    '*.ngrok.io',  # Allow all subdomains of ngrok.io
-]
+ALLOWED_HOSTS = config('ALLOWED_HOSTS')
 
 
 # Application definition
@@ -138,9 +134,12 @@ AUTH_USER_MODEL = 'chats.User'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        # 'NAME': BASE_DIR / 'db.sqlite3',
-        'NAME': config('DATABASE_NAME', default=BASE_DIR / 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': config('MYSQL_DATABASE'),
+        'USER': config('MYSQL_USER'),
+        'PASSWORD': config('MYSQL_PASSWORD'),
+        'HOST': config('MYSQL_HOST'),
+        'PORT': config('MYSQL_PORT'),
     }
 }
 
