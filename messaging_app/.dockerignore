@@ -1,0 +1,9 @@
+post_man_Collections
+db.sqlite3
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.log
+*.pid

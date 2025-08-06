@@ -41,6 +41,7 @@ ALLOWED_HOSTS = [
 
 INSTALLED_APPS = [
     'chats',
+    # 'messaging',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -130,6 +131,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'messaging_app.wsgi.application'
 
 AUTH_USER_MODEL = 'chats.User'
+# AUTH_USER_MODEL = 'messaging.User'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
