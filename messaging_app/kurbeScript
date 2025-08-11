@@ -1,0 +1,43 @@
+#!/bin/bash
+
+echo "Starting minikube..."
+minikube start || { echo "Failed to start Minikube. Exiting..."; exit 1; }
+
+echo "Waiting for Minikube cluster to be ready..."
+
+MAX_RETRIES=10
+RETRY_DELAY_SECONDS=10
+ATTEMPT=0
+
+while [ "$ATTEMPT" -lt "$MAX_RETRIES" ]; do
+    echo "Attempt $((ATTEMPT + 1)) of $MAX_RETRIES: Checking cluster status..."
+
+    kubectl cluster-info > /dev/null 2>&1
+    KUBECTL_STATUS=$?
+
+    MINIKUBE_STATUS_OUTPUT=$(minikube status 2>&1)
+    if echo "$MINIKUBE_STATUS_OUTPUT" | grep -q "host: Running" && \
+       echo "$MINIKUBE_STATUS_OUTPUT" | grep -q "kubelet: Running" && \
+       echo "$MINIKUBE_STATUS_OUTPUT" | grep -q "apiserver: Running"; then
+        MINIKUBE_READY=0
+    else
+        MINIKUBE_READY=1
+    fi
+
+    if [ "$KUBECTL_STATUS" -eq 0 ] && [ "$MINIKUBE_READY" -eq 0 ]; then
+        echo "Minikube cluster is running and ready! 🎉"
+        break
+    else
+        echo "Cluster not fully ready yet. Waiting ${RETRY_DELAY_SECONDS} seconds..."
+        sleep "$RETRY_DELAY_SECONDS"
+        ATTEMPT=$((ATTEMPT + 1))
+    fi
+done
+
+if [ "$ATTEMPT" -ge "$MAX_RETRIES" ]; then
+    echo "Error: Minikube cluster did not become ready after $MAX_RETRIES attempts. Exiting."
+    exit 1
+fi
+
+echo "Retrieving the available pods..."
+kubectl get pods
