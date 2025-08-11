@@ -1,5 +1,4 @@
 #!/bin/bash
-
 echo "Starting minikube..."
 minikube start || { echo "Failed to start Minikube. Exiting..."; exit 1; }
 
