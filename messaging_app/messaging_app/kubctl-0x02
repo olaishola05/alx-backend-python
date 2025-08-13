@@ -1,0 +1,97 @@
+#!/bin/bash
+
+# --- Configuration ---
+BLUE_DEPLOYMENT_FILE="blue_deployment.yaml"
+GREEN_DEPLOYMENT_FILE="green_deployment.yaml"
+SERVICE_FILE="kubeservice.yaml"
+APP_NAME_LABEL="django-messaging-app"
+BLUE_VERSION_LABEL="v1.0"
+GREEN_VERSION_LABEL="v2.0"
+POD_READY_TIMEOUT=180 # seconds
+POD_CHECK_INTERVAL=10 # seconds
+
+echo "--- Starting Blue-Green Deployment Process ---"
+
+# --- Step 1: Deploy the Blue (current) version ---
+echo "1. Deploying the BLUE version ($BLUE_VERSION_LABEL)..."
+kubectl apply -f "$BLUE_DEPLOYMENT_FILE" || { echo "ERROR: Failed to apply blue deployment. Exiting."; exit 1; }
+
+echo "Waiting for BLUE pods to be ready..."
+BLUE_REPLICAS=$(grep -m 1 "replicas:" "$BLUE_DEPLOYMENT_FILE" | awk '{print $2}')
+ELAPSED_TIME=0
+while [ "$ELAPSED_TIME" -lt "$POD_READY_TIMEOUT" ]; do
+    READY_PODS=$(kubectl get pods -l app="$APP_NAME_LABEL",version="$BLUE_VERSION_LABEL" --field-selector=status.phase=Running -o json | jq '.items | length')
+    if [ "$READY_PODS" -ge "$BLUE_REPLICAS" ]; then
+        echo "BLUE deployment ($BLUE_VERSION_LABEL) is ready with $READY_PODS/$BLUE_REPLICAS pods."
+        break
+    else
+        echo "Waiting for BLUE pods ($READY_PODS/$BLUE_REPLICAS running)..."
+        sleep "$POD_CHECK_INTERVAL"
+        ELAPSED_TIME=$((ELAPSED_TIME + POD_CHECK_INTERVAL))
+    fi
+done
+
+if [ "$READY_PODS" -lt "$BLUE_REPLICAS" ]; then
+    echo "ERROR: BLUE pods did not become ready within timeout. Check 'kubectl get pods'."
+    exit 1
+fi
+
+echo ""
+
+# --- Step 2: Deploy the Green (new) version ---
+echo "2. Deploying the GREEN version ($GREEN_VERSION_LABEL)..."
+kubectl apply -f "$GREEN_DEPLOYMENT_FILE" || { echo "ERROR: Failed to apply green deployment. Exiting."; exit 1; }
+
+echo "Waiting for GREEN pods to be ready..."
+GREEN_REPLICAS=$(grep -m 1 "replicas:" "$GREEN_DEPLOYMENT_FILE" | awk '{print $2}')
+ELAPSED_TIME=0
+while [ "$ELAPSED_TIME" -lt "$POD_READY_TIMEOUT" ]; do
+    READY_PODS=$(kubectl get pods -l app="$APP_NAME_LABEL",version="$GREEN_VERSION_LABEL" --field-selector=status.phase=Running -o json | jq '.items | length')
+    if [ "$READY_PODS" -ge "$GREEN_REPLICAS" ]; then
+        echo "GREEN deployment ($GREEN_VERSION_LABEL) is ready with $READY_PODS/$GREEN_REPLICAS pods."
+        break
+    else
+        echo "Waiting for GREEN pods ($READY_PODS/$GREEN_REPLICAS running)..."
+        sleep "$POD_CHECK_INTERVAL"
+        ELAPSED_TIME=$((ELAPSED_TIME + POD_CHECK_INTERVAL))
+    fi
+done
+
+if [ "$READY_PODS" -lt "$GREEN_REPLICAS" ]; then
+    echo "ERROR: GREEN pods did not become ready within timeout. Check 'kubectl get pods'."
+    exit 1
+fi
+
+echo ""
+
+# --- Step 3: Check for errors in the new (Green) version's logs ---
+echo "3. Checking logs for the new (GREEN) version for any immediate errors..."
+GREEN_POD_NAME=$(kubectl get pods -l app="$APP_NAME_LABEL",version="$GREEN_VERSION_LABEL" -o jsonpath='{.items[0].metadata.name}')
+
+if [ -z "$GREEN_POD_NAME" ]; then
+    echo "WARNING: No GREEN pods found to check logs. This might indicate an issue."
+else
+    echo "Retrieving logs from pod: $GREEN_POD_NAME"
+    # Fetch the last 20 lines of logs from the green pod's container
+    # Adjust --tail or remove it to get more logs
+    kubectl logs "$GREEN_POD_NAME" -c django-messaging-app-container --tail=20
+    echo ""
+    echo "Review the logs above for any errors or unexpected behavior in the new version."
+fi
+
+echo ""
+echo "--- Deployment of Blue and Green versions complete. ---"
+echo "The '$APP_NAME_LABEL-external-service' is currently routing traffic to the BLUE version ($BLUE_VERSION_LABEL)."
+echo "Once you are satisfied with the GREEN version, you can switch traffic."
+echo ""
+echo "To switch traffic to the GREEN version ($GREEN_VERSION_LABEL), run:"
+echo "  kubectl patch service $APP_NAME_LABEL-external-service -p '{\"spec\":{\"selector\":{\"version\":\"$GREEN_VERSION_LABEL\"}}}'"
+echo ""
+echo "To revert traffic back to the BLUE version ($BLUE_VERSION_LABEL), run:"
+echo "  kubectl patch service $APP_NAME_LABEL-external-service -p '{\"spec\":{\"selector\":{\"version\":\"$BLUE_VERSION_LABEL\"}}}'"
+echo ""
+echo "To clean up the old (BLUE) deployment after successful switch:"
+echo "  kubectl delete deployment django-messaging-app-blue-deployment"
+echo ""
+echo "To clean up the old (GREEN) deployment after successful switch (if you roll back to blue):"
+echo "  kubectl delete deployment django-messaging-app-green-deployment"

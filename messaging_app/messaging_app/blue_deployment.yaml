@@ -4,19 +4,22 @@ metadata:
   name: django-messaging-app-deployment
   labels:
     app: django-messaging-app
+    version: v1.0
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: django-messaging-app
+      version: v1.0
   template:
     metadata:
       labels:
         app: django-messaging-app
+        version: v1.0
   spec:
     containers:
       - name: django-messaging-app-container
-        image: olaish/messaging_app:1.0
+        image: olaish/messaging_app:v1.0
         ports:
           - containerPort: 8000
 
