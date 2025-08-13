@@ -1,0 +1,60 @@
+#!/bin/bash
+echo "--- Scaling Django app deployment to 3 replicas ---"
+
+kubectl scale deployment/django-messaging-app-deployment --replicas=3 || { echo "Failed to scale deployment. Exiting."; exit 1; }
+
+echo "Deployment scaled. Waiting for pods to become ready..."
+
+REPLICA_COUNT=3
+TIMEOUT=120 # seconds
+ELAPSED_TIME=0
+
+while [ "$ELAPSED_TIME" -lt "$TIMEOUT" ]; do
+    CURRENT_PODS=$(kubectl get pods -l app=django-messaging-app --field-selector=status.phase=Running | grep -c "Running")
+    if [ "$CURRENT_PODS" -ge "$REPLICA_COUNT" ]; then
+        echo "Successfully scaled to $CURRENT_PODS running pods."
+        break
+    else
+        echo "Waiting for pods to be ready ($CURRENT_PODS/$REPLICA_COUNT running)..."
+        sleep 5
+        ELAPSED_TIME=$((ELAPSED_TIME + 5))
+    fi
+done
+
+if [ "$CURRENT_PODS" -lt "$REPLICA_COUNT" ]; then
+    echo "Error: Pods did not become ready within the timeout. Check 'kubectl get pods'."
+    exit 1
+fi
+
+echo ""
+
+echo "--- Verifying that multiple pods are running ---"
+kubectl get pods -l app=django-messaging-app
+
+echo ""
+
+echo "--- Performing load testing with wrk ---"
+
+DJANGO_APP_URL=$(minikube service django-messaging-app-service --url 2>/dev/null)
+
+if [ -z "$DJANGO_APP_URL" ]; then
+    echo "Error: Could not retrieve Django app URL from Minikube service."
+    echo "Ensure 'django-messaging-app-service' is of type NodePort and Minikube is running."
+    exit 1
+fi
+
+echo "Django app URL for load testing: $DJANGO_APP_URL"
+echo "Starting wrk load test (2 threads, 10 connections, 30 seconds duration)..."
+wrk -t2 -c10 -d30s "$DJANGO_APP_URL"
+
+echo "Load testing complete."
+echo ""
+
+echo "--- Monitoring Resource Usage with kubectl top ---"
+
+echo "Top Pods for Django app:"
+kubectl top pods -l app=django-messaging-app --containers
+
+echo ""
+echo "Top Nodes in the cluster:"
+kubectl top nodes

@@ -28,7 +28,7 @@ metadata:
 spec:
   selector:
     app: django-messaging-app
-  type: ClusterIP
+  type: NodePort
   ports:
     - protocol: TCP
       port: 80
