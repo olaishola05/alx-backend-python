@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django-messaging-app-blue-deployment
+  labels:
+    app: django-messaging-app
+    version: v2.0
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: django-messaging-app
+      version: v2.0
+  template:
+    metadata:
+      labels:
+        app: django-messaging-app
+        version: v2.0
+  spec:
+    containers:
+      - name: django-messaging-app-container
+        image: olaish/messaging_app:v2.0
+        ports:
+          - containerPort: 8000

@@ -1,0 +1,73 @@
+#!/bin/bash
+
+DEPLOYMENT_FILE="blue_deployment.yaml"
+DEPLOYMENT_NAME="django-messaging-app-blue-deployment"
+SERVICE_NAME="django-messaging-app-external-service"
+APP_NAME_LABEL="django-messaging-app"
+NEW_VERSION_LABEL="v2.0"
+
+echo "--- Ensuring Minikube is running and getting service URL ---"
+minikube status > /dev/null 2>&1 || { echo "Minikube is not running. Please start Minikube first. Exiting."; exit 1; }
+
+DJANGO_APP_URL=$(minikube service "$SERVICE_NAME" --url 2>/dev/null)
+
+if [ -z "$DJANGO_APP_URL" ]; then
+    echo "ERROR: Could not retrieve Django app URL from Minikube service."
+    echo "Ensure '$SERVICE_NAME' is of type NodePort and Minikube is running. Exiting."
+    exit 1
+fi
+echo "Django app URL for testing: $DJANGO_APP_URL"
+echo ""
+
+test_app_availability() {
+    echo "--- Continuously sending requests to the app (Ctrl+C to stop this loop) ---"
+    while true; do
+        HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$DJANGO_APP_URL")
+        if [ "$HTTP_STATUS" -eq 200 ]; then
+            echo "$(date '+%H:%M:%S') - App is UP (HTTP 200 OK)"
+        else
+            echo "$(date '+%H:%M:%S') - App is DOWN or returned error (HTTP $HTTP_STATUS)!"
+        fi
+        sleep 1
+    done
+}
+
+echo "--- Starting rolling update for $DEPLOYMENT_NAME to $NEW_VERSION_LABEL ---"
+
+echo "Starting background app availability test. Look for 'App is UP' messages during the update."
+test_app_availability &
+CURL_PID=$!
+
+sleep 2
+
+kubectl apply -f "$DEPLOYMENT_FILE" || {
+    echo "ERROR: Failed to apply updated deployment. Stopping curl and exiting."
+    kill $CURL_PID
+    exit 1
+}
+
+echo "--- Monitoring rollout status for $DEPLOYMENT_NAME ---"
+kubectl rollout status deployment/"$DEPLOYMENT_NAME"
+
+ROLLOUT_STATUS=$?
+if [ "$ROLLOUT_STATUS" -ne 0 ]; then
+    echo "ERROR: Rolling update failed or did not complete successfully. Stopping curl and exiting."
+    kill $CURL_PID
+    exit 1
+fi
+
+echo "--- Rolling update completed successfully! ---"
+
+echo "Allowing availability test to run for 10 more seconds for post-update stability check..."
+sleep 10
+
+kill $CURL_PID
+echo "Background app availability test stopped."
+echo ""
+
+echo "--- Verifying current pods are running the new version ($NEW_VERSION_LABEL) ---"
+kubectl get pods -l app="$APP_NAME_LABEL",version="$NEW_VERSION_LABEL"
+
+echo ""
+echo "--- Rolling update process finished. ---"
+echo "You should see that all pods are now running version $NEW_VERSION_LABEL."
