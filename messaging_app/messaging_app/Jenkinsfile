@@ -3,7 +3,7 @@ pipeline {
     agent any
 
     tools {
-        python 'Python3.12.5'
+        python 'python3.12.5'
     }
     environment {
         PYTHONUNBUFFERED = '1'
