@@ -1,10 +1,6 @@
 // Jenkinsfile - CI Pipeline for Django Messaging App
 pipeline {
-    agent {
-        docker {
-            image 'python:3.12-slim'
-        }
-    }
+  agent { label 'docker' }
     environment {
         PYTHONUNBUFFERED = '1'
     }
@@ -20,8 +16,8 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 echo 'Installing Python dependencies...'
-                sh 'pip -m install --upgrade pip'
-                sh 'pip -m install -r requirements.txt'
+                sh 'python3 -m pip install --upgrade pip'
+                sh 'python3 -m pip install -r requirements.txt'
             }
         }
 
