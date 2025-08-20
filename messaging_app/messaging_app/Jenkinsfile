@@ -5,7 +5,6 @@ pipeline {
             image 'python:3.12-slim'
         }
     }
-    options { timestamps(); ansiColor('xterm') }
     environment {
         PYTHONUNBUFFERED = '1'
     }
