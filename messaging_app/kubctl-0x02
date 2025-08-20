@@ -12,7 +12,6 @@ POD_CHECK_INTERVAL=10 # seconds
 
 echo "--- Starting Blue-Green Deployment Process ---"
 
-# --- Step 1: Deploy the Blue (current) version ---
 echo "1. Deploying the BLUE version ($BLUE_VERSION_LABEL)..."
 kubectl apply -f "$BLUE_DEPLOYMENT_FILE" || { echo "ERROR: Failed to apply blue deployment. Exiting."; exit 1; }
 
@@ -38,7 +37,6 @@ fi
 
 echo ""
 
-# --- Step 2: Deploy the Green (new) version ---
 echo "2. Deploying the GREEN version ($GREEN_VERSION_LABEL)..."
 kubectl apply -f "$GREEN_DEPLOYMENT_FILE" || { echo "ERROR: Failed to apply green deployment. Exiting."; exit 1; }
 
@@ -64,7 +62,6 @@ fi
 
 echo ""
 
-# --- Step 3: Check for errors in the new (Green) version's logs ---
 echo "3. Checking logs for the new (GREEN) version for any immediate errors..."
 GREEN_POD_NAME=$(kubectl get pods -l app="$APP_NAME_LABEL",version="$GREEN_VERSION_LABEL" -o jsonpath='{.items[0].metadata.name}')
 
@@ -72,8 +69,6 @@ if [ -z "$GREEN_POD_NAME" ]; then
     echo "WARNING: No GREEN pods found to check logs. This might indicate an issue."
 else
     echo "Retrieving logs from pod: $GREEN_POD_NAME"
-    # Fetch the last 20 lines of logs from the green pod's container
-    # Adjust --tail or remove it to get more logs
     kubectl logs "$GREEN_POD_NAME" -c django-messaging-app-container --tail=20
     echo ""
     echo "Review the logs above for any errors or unexpected behavior in the new version."
@@ -82,7 +77,8 @@ fi
 echo ""
 echo "--- Deployment of Blue and Green versions complete. ---"
 echo "The '$APP_NAME_LABEL-external-service' is currently routing traffic to the BLUE version ($BLUE_VERSION_LABEL)."
-echo "Once you are satisfied with the GREEN version, you can switch traffic."
+
+
 echo ""
 echo "To switch traffic to the GREEN version ($GREEN_VERSION_LABEL), run:"
 echo "  kubectl patch service $APP_NAME_LABEL-external-service -p '{\"spec\":{\"selector\":{\"version\":\"$GREEN_VERSION_LABEL\"}}}'"

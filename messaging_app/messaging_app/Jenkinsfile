@@ -1,0 +1,68 @@
+// Jenkinsfile - CI Pipeline for Django Messaging App
+pipeline {
+    agent any
+
+    tools {
+        python 'Python3.12.5'
+    }
+    environment {
+        PYTHONUNBUFFERED = '1'
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                echo 'Checking out code from GitHub...'
+                checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                echo 'Installing Python dependencies...'
+                sh 'pip install --upgrade pip'
+                sh 'pip install -r requirements.txt'
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                echo 'Running tests with pytest...'
+                sh 'pytest --junitxml=test-results.xml || true'
+            }
+        }
+
+        stage('Publish Test Results') {
+            steps {
+                echo 'Publishing test results...'
+                junit 'test-results.xml'
+            }
+            post {
+                always {
+                    echo 'Test report publishing finished.'
+                }
+            }
+        }
+
+        stage('Cleanup & Notify') {
+            steps {
+                echo 'Pipeline finished. Check results.'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully! 🎉'
+        }
+        failure {
+            echo 'Pipeline failed! 😔 Check the logs for details.'
+        }
+        unstable {
+            echo 'Pipeline was unstable (e.g., some tests failed). ⚠️'
+        }
+        always {
+            echo 'Pipeline execution complete.'
+        }
+    }
+}
