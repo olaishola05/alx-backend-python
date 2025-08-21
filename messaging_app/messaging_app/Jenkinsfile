@@ -1,6 +1,6 @@
 // Jenkinsfile - CI Pipeline for Django Messaging App
 pipeline {
-  agent { label 'docker' }
+  agent any
     environment {
         PYTHONUNBUFFERED = '1'
     }
