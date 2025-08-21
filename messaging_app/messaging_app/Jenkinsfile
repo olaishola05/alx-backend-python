@@ -3,9 +3,6 @@ pipeline {
   agent any
     environment {
         PYTHONUNBUFFERED = '1'
-    }
-
-    environment {
         GIT_REPO_URL = 'https://github.com/olaishola05/alx-backend-python.git'
         GIT_BRANCH = 'main'
         GIT_CREDENTIALS_ID = 'github-pat-credential'
