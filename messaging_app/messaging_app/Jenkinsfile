@@ -16,15 +16,17 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 echo 'Installing Python dependencies...'
-                sh 'python3 -m pip install --upgrade pip'
-                sh 'python3 -m pip install -r requirements.txt'
+                sh 'python3 -m venv venv'
+                sh '. venv/bin/activate && pip install --upgrade pip'
+                sh '. venv/bin/activate && pip install -r requirements.txt'
+                sh '. venv/bin/activate && pip install pytest pytest-cov'
             }
         }
 
         stage('Run Tests') {
             steps {
                 echo 'Running tests with pytest...'
-                sh 'pytest --junitxml=test-results.xml || true'
+                sh '. venv/bin/activate && python -m pytest --junitxml=test-results.xml || true'
             }
         }
 
