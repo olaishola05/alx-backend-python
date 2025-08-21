@@ -6,6 +6,11 @@ pipeline {
         GIT_REPO_URL = 'https://github.com/olaishola05/alx-backend-python.git'
         GIT_BRANCH = 'main'
         GIT_CREDENTIALS_ID = 'github-pat-credential'
+        IMAGE_NAME     = 'olaish/messaging-app'
+        CONTAINER_NAME = 'messaging-app'
+        HOST_PORT      = '8000'
+        CONTAINER_PORT = '8000'
+        BUILD_NUMBER = 1.0
     }
 
     stages {
@@ -18,23 +23,56 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Debug Environment') {
             steps {
-                echo 'Installing Python dependencies...'
-                sh 'python3 -m venv venv'
-                sh '. venv/bin/activate && pip install --upgrade pip'
-                // sh '. venv/bin/activate && pip3 install -r messaging_app/requirements.txt'
-                sh '. venv/bin/activate && pip install -r requirements.txt'
-                sh '. venv/bin/activate && pip install pytest pytest-cov'
-            }
+                sh 'docker --version'
+                sh 'docker info'
+                sh 'ls -la'
+                sh 'ls -la messaging_app'
+          }
         }
 
-        stage('Run Tests') {
-            steps {
-                echo 'Running tests with pytest...'
-                sh '. venv/bin/activate && python -m pytest --junitxml=test-results.xml || true'
-            }
+        stage('Build Docker Image'){
+            steps{
+              echo "Building Docker Image for ${{IMAGE_NAME}}"
+              dir('messaging_app')
+              sh """
+                  docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} -t ${IMAGE_NAME}:latest .
+              """
+          }
         }
+
+        stage('Test') {
+            steps {
+                echo "Running tests with pytest inside the ${CONTAINER_NAME}"
+                sh """
+                    docker run --rm \
+                    -v \$PWD:/app \
+                    -w /app \
+                    --name ${CONTAINER_NAME} \
+                    ${IMAGE_NAME}:${BUILD_NUMBER} \
+                    pytest --junitxml=test-results.xml
+                """
+          }
+        }
+
+        // stage('Install Dependencies') {
+            // steps {
+                // echo 'Installing Python dependencies...'
+                // sh 'python3 -m venv venv'
+                // sh '. venv/bin/activate && pip install --upgrade pip'
+                // sh '. venv/bin/activate && pip3 install -r messaging_app/requirements.txt'
+                // sh '. venv/bin/activate && pip install -r requirements.txt'
+                // sh '. venv/bin/activate && pip install pytest pytest-cov'
+            // }
+        // }
+
+        // stage('Run Tests') {
+            // steps {
+                // echo 'Running tests with pytest...'
+                // sh '. venv/bin/activate && python -m pytest --junitxml=test-results.xml || true'
+            // }
+        // }
 
         stage('Publish Test Results') {
             steps {
@@ -48,6 +86,30 @@ pipeline {
             }
         }
 
+        stage("Login to Docker Hub") {
+          steps{
+            echo "Logging in to Docker Hub"
+            withCredentials([usernamePassword(
+              credentialsId: 'dockerhub-credentials-id',
+              usernameVariable: 'DOCKERHUB_CREDENTIALS_USR',
+              passwordVariable: 'DOCKERHUB_CREDENTIALS_PSW'
+            )])
+            sh """
+              echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_PSW} --password-stdin
+            """
+          }
+        }
+
+        stage('Push Docker Image'){
+          steps{
+              echo "Pushing ${IMAGE_NAME}:${BUILD_NUMBER} to Docker Hub"
+              sh """
+                docker push ${IMAGE_NAME}:${BUILD_NUMBER}
+                docker push ${IMAGE_NAME}:latest
+              """
+          }
+        }
+
         stage('Cleanup & Notify') {
             steps {
                 echo 'Pipeline finished. Check results.'
@@ -58,6 +120,7 @@ pipeline {
     post {
         success {
             echo 'Pipeline completed successfully! 🎉'
+            sh "docker system prune -f"
         }
         failure {
             echo 'Pipeline failed! 😔 Check the logs for details.'
