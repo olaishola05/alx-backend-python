@@ -46,17 +46,32 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r messaging_app/requirements.txt
           pip install mysqlclient
+          pip install flake8 coverage
 
-      - name: Run Test
+      - name: Lint code with Flake8
+        run: |
+          flake8 messaging_app --exit-zero
+        continue-on-error: false
+
+      - name: Run Test with Coverage
         env:
           DB_HOST: mysql
           DB_USER: testuser
           DB_PASSWORD: testpass
           DB_NAME: testdb
-        run: pytest --junitxml=test-results.xml
+        run: |
+          coverage run -m pytest --junitxml=test-results.xml
+          coverage report
+          coverage xml -o coverage.xml
 
       - name: Upload test results
         uses: actions/upload-artifact@v3
         with:
           name: test-results
           path: test-results.xml
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage.xml
